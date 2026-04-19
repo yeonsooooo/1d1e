@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Settings, ChevronDown, Eye, EyeOff } from "lucide-react"
 import { CalendarGrid } from "@/components/calendar-grid"
 import { MonthTabs } from "@/components/month-tabs"
@@ -25,18 +25,32 @@ function getAdjustedToday(dayStartHour: number): Date {
   return now
 }
 
-// Default emoji data per spec: Feb 2026
-// 🥂 on 2, 🏃 on 3, 🧸 on 5, 🌪️ on 7, 👻 on 8, 💅 on 10, 🎾 on 11
-const INITIAL_EMOJIS: Record<string, Record<number, string>> = {
-  "2026-1": {
-    2: "🥂",
-    3: "🏃",
-    5: "🧸",
-    7: "🌪️",
-    8: "👻",
-    10: "💅",
-    11: "🎾",
-  },
+const STORAGE_KEY = "1d1e-entries"
+
+function loadEntries() {
+  if (typeof window === "undefined") return { emojis: {}, texts: {} }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { emojis: {}, texts: {} }
+    const parsed = JSON.parse(raw)
+    return {
+      emojis: parsed.emojis ?? {},
+      texts: parsed.texts ?? {},
+    }
+  } catch {
+    return { emojis: {}, texts: {} }
+  }
+}
+
+function saveEntries(
+  emojis: Record<string, Record<number, string>>,
+  texts: Record<string, Record<number, string>>
+) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ emojis, texts }))
+  } catch {
+    // storage quota exceeded 등 무시
+  }
 }
 
 function emojiKey(year: number, month: number) {
@@ -49,8 +63,17 @@ export function CalendarApp() {
 
   const [viewYear, setViewYear] = useState(() => getAdjustedToday(getStoredDayStartHour()).getFullYear())
   const [viewMonth, setViewMonth] = useState(() => getAdjustedToday(getStoredDayStartHour()).getMonth())
-  const [emojiData, setEmojiData] = useState<Record<string, Record<number, string>>>(INITIAL_EMOJIS)
-  const [textData, setTextData] = useState<Record<string, Record<number, string>>>({})
+  const [emojiData, setEmojiData] = useState<Record<string, Record<number, string>>>(
+    () => loadEntries().emojis
+  )
+  const [textData, setTextData] = useState<Record<string, Record<number, string>>>(
+    () => loadEntries().texts
+  )
+
+  // emojiData 또는 textData가 바뀔 때마다 localStorage에 저장
+  useEffect(() => {
+    saveEntries(emojiData, textData)
+  }, [emojiData, textData])
 
   // pickerState: quick emoji picker (Trigger A — new entry, no emoji yet)
   const [pickerState, setPickerState] = useState<{
