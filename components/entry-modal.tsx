@@ -68,17 +68,23 @@ export function EntryModal({
 
   // 키보드 높이 감지 — visualViewport API
   useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
     const update = () => {
-      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      setKeyboardHeight(kb)
+      const vv = window.visualViewport
+      setKeyboardHeight(vv ? Math.max(0, window.innerHeight - vv.height) : 0)
     }
-    vv.addEventListener("resize", update)
-    vv.addEventListener("scroll", update)
+    const vv = window.visualViewport
+    if (vv) {
+      vv.addEventListener("resize", update)
+      vv.addEventListener("scroll", update)
+    }
+    window.addEventListener("resize", update)
     return () => {
-      vv.removeEventListener("resize", update)
-      vv.removeEventListener("scroll", update)
+      const vv2 = window.visualViewport
+      if (vv2) {
+        vv2.removeEventListener("resize", update)
+        vv2.removeEventListener("scroll", update)
+      }
+      window.removeEventListener("resize", update)
     }
   }, [])
 
@@ -145,7 +151,7 @@ export function EntryModal({
           maxWidth: 420,
           margin: "0 auto",
           ...(keyboardHeight > 0
-            ? { bottom: keyboardHeight + 8, top: "auto", transform: "none" }
+            ? { bottom: keyboardHeight, top: "auto", transform: "none" }
             : { top: "50%", transform: "translateY(-55%)" }
           ),
         }}
