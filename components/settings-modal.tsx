@@ -46,7 +46,7 @@ export function SettingsModal({ dayStartHour, onChangeDayStartHour, onClose }: S
           {/* Day start hour row */}
           <button
             onClick={() => setShowHourPicker((v) => !v)}
-            className="flex items-center justify-between w-full py-4 border-b border-white/10"
+            className="flex items-center justify-between w-full py-4"
           >
             <div className="flex flex-col items-start gap-0.5">
               <span className="text-white text-base">오늘 시작 시간</span>

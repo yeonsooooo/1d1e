@@ -18,13 +18,17 @@ export function MonthTabs({ selectedMonth, onSelect }: MonthTabsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-  // Center the selected tab within the scroll container
+  // Scroll selected tab to left with 16px margin
   useEffect(() => {
     const container = containerRef.current
     const tab = tabRefs.current[selectedMonth]
     if (!container || !tab) return
 
-    container.scrollTo({ left: tab.offsetLeft - 16, behavior: "smooth" })
+    const tabRect = tab.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
+    // tab's position within scroll content, then offset to leave 16px left margin
+    const targetScrollLeft = tabRect.left - containerRect.left + container.scrollLeft - 16
+    container.scrollTo({ left: targetScrollLeft, behavior: "smooth" })
   }, [selectedMonth])
 
   return (
@@ -37,7 +41,6 @@ export function MonthTabs({ selectedMonth, onSelect }: MonthTabsProps) {
         scrollbarWidth: "none",
         msOverflowStyle: "none",
         WebkitOverflowScrolling: "touch",
-        scrollSnapType: "x mandatory",
       }}
     >
       {MONTHS.map((name, i) => {
@@ -55,7 +58,7 @@ export function MonthTabs({ selectedMonth, onSelect }: MonthTabsProps) {
                 ? "bg-black text-white font-bold"
                 : "border border-[#505050] text-[#999999] font-light hover:text-white"
             )}
-            style={{ scrollSnapAlign: "center" }}
+            style={{  }}
           >
             {name}
           </button>

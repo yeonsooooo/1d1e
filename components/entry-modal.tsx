@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useCallback } from "react"
 import { X, Trash2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { EmojiPicker } from "@/components/emoji-picker"
 import { cn } from "@/lib/utils"
@@ -61,7 +61,16 @@ export function EntryModal({
   const [pickerMonth, setPickerMonth] = useState(date.getMonth())
   const [showConflictConfirm, setShowConflictConfirm] = useState(false)
   const [pendingDate, setPendingDate] = useState<Date | null>(null)
+  const [canScrollUp, setCanScrollUp] = useState(false)
+  const [canScrollDown, setCanScrollDown] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const updateScrollIndicators = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    setCanScrollUp(el.scrollTop > 2)
+    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 2)
+  }, [])
 
   const handleSave = () => {
     if (!emoji) return
@@ -242,16 +251,32 @@ export function EntryModal({
           </button>
         </div>
 
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="일기 쓰고 싶은 날엔 여기에 쓸 수 있어요"
-          className="flex-1 bg-transparent text-white text-base leading-relaxed placeholder:text-white/30 resize-none outline-none px-5 min-h-[180px]"
-          style={{ fontFamily: "inherit", paddingTop: 20, paddingBottom: 20 }}
-
-        />
+        {/* Textarea with scroll gradient indicators */}
+        <div className="relative flex-1 min-h-0">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => { setText(e.target.value); setTimeout(updateScrollIndicators, 0) }}
+            onScroll={updateScrollIndicators}
+            placeholder="일기 쓰고 싶은 날엔 여기에 쓸 수 있어요"
+            className="w-full h-full bg-transparent text-white text-base leading-relaxed placeholder:text-white/30 resize-none outline-none px-5 min-h-[180px]"
+            style={{ fontFamily: "inherit", paddingTop: 20, paddingBottom: 20 }}
+          />
+          {/* Top fade */}
+          {canScrollUp && (
+            <div
+              className="absolute top-0 left-0 right-0 h-10 pointer-events-none"
+              style={{ background: "linear-gradient(to bottom, #3a3a3a, transparent)" }}
+            />
+          )}
+          {/* Bottom fade */}
+          {canScrollDown && (
+            <div
+              className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
+              style={{ background: "linear-gradient(to top, #3a3a3a, transparent)" }}
+            />
+          )}
+        </div>
 
         {/* Save button — filled, bottom */}
         <div className="px-5 pb-5 pt-1">

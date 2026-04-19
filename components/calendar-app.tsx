@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, ChevronDown, Eye, EyeOff } from "lucide-react"
+import { Settings, ChevronDown, Eye, EyeOff, Plus } from "lucide-react"
 import { CalendarGrid } from "@/components/calendar-grid"
 import { MonthTabs } from "@/components/month-tabs"
 import { EmojiPicker } from "@/components/emoji-picker"
@@ -218,9 +218,9 @@ export function CalendarApp() {
               aria-pressed={hideDates}
             >
               {hideDates ? (
-                <EyeOff className="w-8 h-8" strokeWidth={1} />
+                <EyeOff className="w-6 h-6" strokeWidth={1} />
               ) : (
-                <Eye className="w-8 h-8" strokeWidth={1} />
+                <Eye className="w-6 h-6" strokeWidth={1} />
               )}
             </button>
             <button
@@ -228,7 +228,7 @@ export function CalendarApp() {
               aria-label="Settings"
               onClick={() => setShowSettings(true)}
             >
-              <Settings className="w-8 h-8" strokeWidth={1} />
+              <Settings className="w-6 h-6" strokeWidth={1} />
             </button>
           </div>
         </header>
@@ -290,7 +290,7 @@ export function CalendarApp() {
         }}
         aria-label="Add emoji"
       >
-        <span className="text-black text-3xl font-light leading-none">+</span>
+        <Plus className="w-7 h-7 text-black" strokeWidth={1.5} />
       </button>
 
       {/* Trigger A: Emoji picker (new entry — pick emoji first) */}
