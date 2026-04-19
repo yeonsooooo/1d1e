@@ -53,10 +53,10 @@ export function MonthTabs({ selectedMonth, onSelect }: MonthTabsProps) {
             aria-selected={isSelected}
             onClick={() => onSelect(i)}
             className={cn(
-              "flex-shrink-0 px-5 py-1 rounded-full text-[28px] transition-all duration-200",
+              "flex-shrink-0 px-5 py-1 rounded-full text-[39px] transition-all duration-200",
               isSelected
                 ? "bg-black text-white font-bold"
-                : "border border-[#505050] text-[#999999] font-light hover:text-white"
+                : "border border-[#505050] text-[#555555] font-light hover:text-white"
             )}
             style={{  }}
           >
