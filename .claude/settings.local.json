@@ -3,7 +3,10 @@
     "allow": [
       "mcp__Claude_Preview__preview_start",
       "Bash(kill 27033)",
-      "Bash(kill 26554)"
+      "Bash(kill 26554)",
+      "Read(//Users/yeonsoo/**)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(gh auth *)"
     ]
   }
 }

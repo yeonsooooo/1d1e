@@ -35,6 +35,12 @@ __v0_jsx-dev-runtime.ts
 .v0-trash/
 next.user-config.*
 
+# Old static icons (replaced by app/icon.tsx & app/apple-icon.tsx)
+public/apple-icon.png
+public/icon-dark-32x32.png
+public/icon-light-32x32.png
+public/icon.svg
+
 # Use npm lockfile only (avoid pnpm/npm conflict on Vercel)
 pnpm-lock.yaml
 
