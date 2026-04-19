@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { X, Trash2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { EmojiPicker } from "@/components/emoji-picker"
 import { cn } from "@/lib/utils"
@@ -63,7 +63,24 @@ export function EntryModal({
   const [pendingDate, setPendingDate] = useState<Date | null>(null)
   const [canScrollUp, setCanScrollUp] = useState(false)
   const [canScrollDown, setCanScrollDown] = useState(false)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // 키보드 높이 감지 — visualViewport API
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      setKeyboardHeight(kb)
+    }
+    vv.addEventListener("resize", update)
+    vv.addEventListener("scroll", update)
+    return () => {
+      vv.removeEventListener("resize", update)
+      vv.removeEventListener("scroll", update)
+    }
+  }, [])
 
   const updateScrollIndicators = useCallback(() => {
     const el = textareaRef.current
@@ -123,8 +140,15 @@ export function EntryModal({
 
       {/* Floating detached card */}
       <div
-        className="fixed inset-x-4 top-1/2 -translate-y-[55%] z-50 rounded-[28px] bg-[#3a3a3a] flex flex-col overflow-hidden"
-        style={{ maxWidth: 420, margin: "0 auto" }}
+        className="fixed inset-x-4 z-50 rounded-[32px] bg-[#3a3a3a] flex flex-col overflow-hidden"
+        style={{
+          maxWidth: 420,
+          margin: "0 auto",
+          ...(keyboardHeight > 0
+            ? { bottom: keyboardHeight + 8, top: "auto", transform: "none" }
+            : { top: "50%", transform: "translateY(-55%)" }
+          ),
+        }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
