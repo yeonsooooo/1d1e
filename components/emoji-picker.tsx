@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import { X, Trash2, Smile, Users, PawPrint, Leaf, UtensilsCrossed, Trophy, Plane, Lightbulb, Heart, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -93,8 +93,8 @@ const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
       "✝️","☯️","☪️","🕉️","✡️","🔯","🕎","☦️","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒",
       "♓","🆔","⚛️","🉑","☢️","☣️","📴","📳","🈶","🈚","🈸","🈺","🈷️","✴️","🆚","💮","🉐","㊙️","㊗️","🈴",
       "🈵","🈹","🈲","🅰️","🅱️","🆎","🆑","🅾️","🆘","❌","⭕","🛑","⛔","📛","🚫","💯","💢","♨️","🚷","🚯",
-      "🚳","🚱","🔞","📵","🔕","🔇","🔈","🔉","🔊","📢","📣","🔔","🔕","🎵","🎶","💹","🔱","📛","🔰","♻️",
-      "✅","🔛","🔜","🔝","🆒","🆓","🆕","🆙","🆗","🆙","🈴","🈵","🈹","⭐","🌟","✨","💫","🎆","🎇","🧨",
+      "🚳","🚱","🔞","📵","🔇","🔈","🔉","🔊","📢","📣","🔔","🔕","🎵","🎶","💹","🔱","🔰","♻️",
+      "✅","🔛","🔜","🔝","🆒","🆓","🆕","🆙","🆗","⭐","🌟","✨","💫","🎆","🎇","🧨",
     ],
   },
 ]
@@ -109,6 +109,34 @@ interface EmojiPickerProps {
 
 export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: EmojiPickerProps) {
   const [activeCategory, setActiveCategory] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  const scrollToCategory = (index: number) => {
+    const section = sectionRefs.current[index]
+    const container = scrollRef.current
+    if (!section || !container) return
+    // getBoundingClientRect 기반으로 정확한 스크롤 위치 계산
+    const sectionTop = section.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
+    container.scrollTo({ top: sectionTop, behavior: "smooth" })
+    setActiveCategory(index)
+  }
+
+  // Update active tab based on scroll position
+  const handleScroll = useCallback(() => {
+    const container = scrollRef.current
+    if (!container) return
+    const scrollTop = container.scrollTop
+    const containerTop = container.getBoundingClientRect().top
+    let current = 0
+    sectionRefs.current.forEach((ref, i) => {
+      if (ref) {
+        const top = ref.getBoundingClientRect().top - containerTop + scrollTop
+        if (top <= scrollTop + 8) current = i
+      }
+    })
+    setActiveCategory(current)
+  }, [])
 
   return (
     <>
@@ -129,7 +157,7 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
         aria-label="이모지 선택"
       >
         {/* Top nav */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <button
             onClick={onClose}
             className="text-white/50 hover:text-white transition-colors w-10 h-10 flex items-center justify-start"
@@ -152,56 +180,78 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
           </div>
         </div>
 
-        {/* Category tabs */}
-        <div className="px-5 py-3">
+        {/* Scrollable emoji list — all categories in sequence */}
         <div
-          className="flex gap-3 overflow-x-auto"
-          style={{ scrollbarWidth: "none" }}
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 min-h-0 overflow-y-auto"
+          style={{ scrollbarWidth: "none", paddingBottom: 80 }}
         >
-          {EMOJI_CATEGORIES.map((cat, i) => {
-            const Icon = CATEGORY_ICONS[i]
-            const isSelected = activeCategory === i
-            return (
-              <button
-                key={i}
-                onClick={() => setActiveCategory(i)}
-                aria-label={cat.label}
-                className={cn(
-                  "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                  isSelected ? "bg-white" : "hover:bg-white/10"
-                )}
-              >
-                <Icon
-                  className="w-5 h-5"
-                  style={{ color: isSelected ? "#111111" : "rgba(255,255,255,0.45)" }}
-                  strokeWidth={1.5}
-                />
-              </button>
-            )
-          })}
-        </div>
-        </div>
-
-        {/* Divider */}
-        <div className="mx-5 border-t border-white/15" />
-
-        {/* Emoji grid */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-5" style={{ scrollbarWidth: "none" }}>
-        <div className="grid grid-cols-5 gap-2">
-          {EMOJI_CATEGORIES[activeCategory].emojis.map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => onSelect(emoji)}
-              className={cn(
-                "flex items-center justify-center h-14 text-[28px] rounded-2xl transition-all hover:bg-white/10 active:scale-95",
-                currentEmoji === emoji ? "bg-white/20 ring-1 ring-white/40" : ""
-              )}
-              aria-label={emoji}
+          {EMOJI_CATEGORIES.map((cat, catIndex) => (
+            <div
+              key={catIndex}
+              ref={(el) => { sectionRefs.current[catIndex] = el }}
             >
-              {emoji}
-            </button>
+              {/* Category label */}
+              <div className="px-5 pt-0 pb-2">
+                <span className="text-white/35 text-xs font-medium tracking-wide uppercase">
+                  {cat.label}
+                </span>
+              </div>
+              {/* Emoji grid */}
+              <div className="grid grid-cols-5 gap-2 px-5 pb-8">
+                {cat.emojis.map((emoji, emojiIndex) => (
+                  <button
+                    key={emojiIndex}
+                    onClick={() => onSelect(emoji)}
+                    className={cn(
+                      "flex items-center justify-center h-14 text-[28px] rounded-2xl transition-all hover:bg-white/10 active:scale-95",
+                      currentEmoji === emoji ? "bg-white/20 ring-1 ring-white/40" : ""
+                    )}
+                    aria-label={emoji}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
+
+        {/* Floating tab bar — bottom overlay */}
+        <div
+          className="absolute bottom-0 left-0 right-0 px-4 pb-4"
+          style={{
+            background: "linear-gradient(to top, #3a3a3a 65%, transparent)",
+            paddingTop: 24,
+          }}
+        >
+          <div
+            className="flex gap-1 rounded-full px-2 py-2"
+            style={{ background: "#2a2a2a", scrollbarWidth: "none", overflowX: "auto" }}
+          >
+            {EMOJI_CATEGORIES.map((cat, i) => {
+              const Icon = CATEGORY_ICONS[i]
+              const isSelected = activeCategory === i
+              return (
+                <button
+                  key={i}
+                  onClick={() => scrollToCategory(i)}
+                  aria-label={cat.label}
+                  className={cn(
+                    "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                    isSelected ? "bg-white" : "hover:bg-white/10"
+                  )}
+                >
+                  <Icon
+                    className="w-5 h-5"
+                    style={{ color: isSelected ? "#111111" : "rgba(255,255,255,0.45)" }}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     </>
