@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { X, Trash2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { EmojiPicker } from "@/components/emoji-picker"
 import { cn } from "@/lib/utils"
@@ -63,13 +63,6 @@ export function EntryModal({
   const [pendingDate, setPendingDate] = useState<Date | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-focus textarea when modal opens (and emoji is set)
-  useEffect(() => {
-    if (emoji && textareaRef.current) {
-      textareaRef.current.focus()
-    }
-  }, [emoji])
-
   const handleSave = () => {
     if (!emoji) return
     onSave(emoji, text, selectedDate)
@@ -78,7 +71,6 @@ export function EntryModal({
   const handleEmojiSelected = (selected: string) => {
     setEmoji(selected)
     setShowEmojiPicker(false)
-    setTimeout(() => textareaRef.current?.focus(), 100)
   }
 
   const handleDaySelect = (day: number) => {
