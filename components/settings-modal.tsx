@@ -27,7 +27,7 @@ export function SettingsModal({ dayStartHour, onChangeDayStartHour, onClose }: S
 
       {/* Modal card */}
       <div
-        className="fixed inset-x-4 top-1/2 -translate-y-[55%] rounded-[28px] bg-[#3a3a3a] flex flex-col overflow-hidden"
+        className="fixed inset-x-4 top-1/2 -translate-y-[55%] rounded-[28px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
         style={{ zIndex: 50, maxWidth: 390, margin: "0 auto" }}
       >
         {/* Header */}

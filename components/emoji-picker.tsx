@@ -149,7 +149,7 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
 
       {/* Floating card */}
       <div
-        className="fixed inset-x-4 top-1/2 -translate-y-[55%] z-50 rounded-[32px] bg-[#3a3a3a] flex flex-col overflow-hidden"
+        className="fixed inset-x-4 top-1/2 -translate-y-[55%] z-50 rounded-[32px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
         style={{ maxWidth: 420, margin: "0 auto", height: 500 }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"

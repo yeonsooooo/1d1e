@@ -146,7 +146,7 @@ export function EntryModal({
 
       {/* Floating detached card */}
       <div
-        className="fixed inset-x-4 z-50 rounded-[32px] bg-[#3a3a3a] flex flex-col overflow-hidden"
+        className="fixed inset-x-4 z-50 rounded-[32px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
         style={{
           maxWidth: 420,
           margin: "0 auto",
@@ -203,7 +203,7 @@ export function EntryModal({
         {/* Date picker — absolute overlay covering modal body */}
         {showDatePicker && (
           <div
-            className="absolute inset-x-0 rounded-[28px] bg-[#3a3a3a] z-10 p-4"
+            className="absolute inset-x-0 rounded-[28px] bg-[#353535] z-10 p-4"
             style={{ top: 60 }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -248,7 +248,7 @@ export function EntryModal({
                       key={ci}
                       onClick={() => handleDaySelect(day)}
                       className={cn(
-                        "h-9 w-full flex items-center justify-center rounded-full text-[13px] transition-colors",
+                        "h-9 w-9 mx-auto flex items-center justify-center rounded-full text-[15px] transition-colors",
                         isSelected
                           ? "bg-white text-black font-bold"
                           : isSunday
@@ -335,7 +335,7 @@ export function EntryModal({
         <>
           <div className="fixed inset-0 bg-black/60" style={{ zIndex: 60 }} onClick={() => setShowConflictConfirm(false)} aria-hidden="true" />
           <div
-            className="fixed inset-x-8 top-1/2 -translate-y-1/2 rounded-2xl bg-[#3a3a3a] p-6 flex flex-col gap-5"
+            className="fixed inset-x-8 top-1/2 -translate-y-1/2 rounded-2xl bg-[#353535] border border-white/15 p-6 flex flex-col gap-5"
             style={{ zIndex: 70, maxWidth: 320, margin: "0 auto" }}
           >
             <p className="text-white text-base text-center leading-relaxed">
