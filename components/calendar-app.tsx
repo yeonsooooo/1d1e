@@ -1,19 +1,17 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Settings, ChevronDown, Eye, EyeOff, Plus } from "lucide-react"
+import { Settings, ChevronDown, Eye, EyeOff, Plus, LogOut } from "lucide-react"
 import { CalendarGrid } from "@/components/calendar-grid"
 import { MonthTabs } from "@/components/month-tabs"
 import { EmojiPicker } from "@/components/emoji-picker"
 import { EntryModal } from "@/components/entry-modal"
 import { SettingsModal } from "@/components/settings-modal"
 import { ShapedCalendarCard } from "@/components/shaped-calendar-card"
+import { LoginScreen } from "@/components/login-screen"
+import { useAuth } from "@/components/auth-provider"
+import { subscribeUserData, saveUserData, migrateFromLocalStorage } from "@/lib/firestore"
 import { cn } from "@/lib/utils"
-
-function getStoredDayStartHour(): number {
-  if (typeof window === "undefined") return 0
-  return parseInt(localStorage.getItem("dayStartHour") ?? "0", 10)
-}
 
 function getAdjustedToday(dayStartHour: number): Date {
   const now = new Date()
@@ -25,55 +23,88 @@ function getAdjustedToday(dayStartHour: number): Date {
   return now
 }
 
-const STORAGE_KEY = "1d1e-entries"
-
-function loadEntries() {
-  if (typeof window === "undefined") return { emojis: {}, texts: {} }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { emojis: {}, texts: {} }
-    const parsed = JSON.parse(raw)
-    return {
-      emojis: parsed.emojis ?? {},
-      texts: parsed.texts ?? {},
-    }
-  } catch {
-    return { emojis: {}, texts: {} }
-  }
-}
-
-function saveEntries(
-  emojis: Record<string, Record<number, string>>,
-  texts: Record<string, Record<number, string>>
-) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ emojis, texts }))
-  } catch {
-    // storage quota exceeded 등 무시
-  }
-}
-
 function emojiKey(year: number, month: number) {
   return `${year}-${month}`
 }
 
 export function CalendarApp() {
-  const [dayStartHour, setDayStartHour] = useState(getStoredDayStartHour)
+  const { user, authLoading, signOut } = useAuth()
+
+  const [dayStartHour, setDayStartHour] = useState(0)
   const today = getAdjustedToday(dayStartHour)
 
-  const [viewYear, setViewYear] = useState(() => getAdjustedToday(getStoredDayStartHour()).getFullYear())
-  const [viewMonth, setViewMonth] = useState(() => getAdjustedToday(getStoredDayStartHour()).getMonth())
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
   const [calAnimKey, setCalAnimKey] = useState(0)
-  const [calAnim, setCalAnim] = useState<'from-left' | 'from-right' | null>(null)
+  const [calAnim, setCalAnim] = useState<"from-left" | "from-right" | null>(null)
   const swipeStartX = useRef<number | null>(null)
 
-  const navMonth = useCallback((dir: 'prev' | 'next') => {
-    setCalAnim(dir === 'next' ? 'from-right' : 'from-left')
-    setCalAnimKey(k => k + 1)
-    if (dir === 'next') {
-      setViewMonth(m => { if (m === 11) { setViewYear(y => y + 1); return 0 } return m + 1 })
+  const [emojiData, setEmojiData] = useState<Record<string, Record<string, string>>>({})
+  const [textData, setTextData] = useState<Record<string, Record<string, string>>>({})
+  const [dataLoaded, setDataLoaded] = useState(false)
+
+  const [pickerState, setPickerState] = useState<{ day: number; year: number; month: number } | null>(null)
+  const [modalState, setModalState] = useState<{ day: number; year: number; month: number; isEditing: boolean } | null>(null)
+  const [showYearPicker, setShowYearPicker] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [hideDates, setHideDates] = useState(false)
+
+  // Firestore 저장 디바운스 ref
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // --- Firestore 구독 ---
+  useEffect(() => {
+    if (!user) {
+      setDataLoaded(false)
+      return
+    }
+
+    let firstSnapshot = true
+
+    const unsubscribe = subscribeUserData(user.uid, async (data) => {
+      if (data === null && firstSnapshot) {
+        // 최초 로그인: localStorage 데이터를 Firestore로 마이그레이션
+        firstSnapshot = false
+        await migrateFromLocalStorage(user.uid)
+        // 마이그레이션 후 onSnapshot이 다시 호출됨
+        return
+      }
+      firstSnapshot = false
+
+      if (data) {
+        setEmojiData(data.emojis)
+        setTextData(data.texts)
+        setDayStartHour(data.dayStartHour)
+      }
+      setDataLoaded(true)
+    })
+
+    return () => {
+      unsubscribe()
+      setDataLoaded(false)
+    }
+  }, [user])
+
+  // --- Firestore 저장 (디바운스 500ms) ---
+  const scheduleSave = useCallback(
+    (emojis: Record<string, Record<string, string>>, texts: Record<string, Record<string, string>>) => {
+      if (!user) return
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = setTimeout(() => {
+        saveUserData(user.uid, { emojis, texts }).catch(console.error)
+      }, 500)
+    },
+    [user]
+  )
+
+  // --- 월 네비게이션 ---
+  const navMonth = useCallback((dir: "prev" | "next") => {
+    setCalAnim(dir === "next" ? "from-right" : "from-left")
+    setCalAnimKey((k) => k + 1)
+    if (dir === "next") {
+      setViewMonth((m) => { if (m === 11) { setViewYear((y) => y + 1); return 0 } return m + 1 })
     } else {
-      setViewMonth(m => { if (m === 0) { setViewYear(y => y - 1); return 11 } return m - 1 })
+      setViewMonth((m) => { if (m === 0) { setViewYear((y) => y - 1); return 11 } return m - 1 })
     }
   }, [])
 
@@ -81,73 +112,41 @@ export function CalendarApp() {
   const onSwipeTouchEnd = (e: React.TouchEvent) => {
     if (swipeStartX.current === null) return
     const dx = e.changedTouches[0].clientX - swipeStartX.current
-    if (dx < -50) navMonth('next')
-    else if (dx > 50) navMonth('prev')
+    if (dx < -50) navMonth("next")
+    else if (dx > 50) navMonth("prev")
     swipeStartX.current = null
   }
   const onSwipeMouseDown = (e: React.MouseEvent) => {
     const startX = e.clientX
     const onUp = (ev: MouseEvent) => {
       const dx = ev.clientX - startX
-      if (dx < -50) navMonth('next')
-      else if (dx > 50) navMonth('prev')
-      document.removeEventListener('mouseup', onUp)
+      if (dx < -50) navMonth("next")
+      else if (dx > 50) navMonth("prev")
+      document.removeEventListener("mouseup", onUp)
     }
-    document.addEventListener('mouseup', onUp)
+    document.addEventListener("mouseup", onUp)
   }
-  const [emojiData, setEmojiData] = useState<Record<string, Record<number, string>>>(
-    () => loadEntries().emojis
-  )
-  const [textData, setTextData] = useState<Record<string, Record<number, string>>>(
-    () => loadEntries().texts
-  )
-
-  // emojiData 또는 textData가 바뀔 때마다 localStorage에 저장
-  useEffect(() => {
-    saveEntries(emojiData, textData)
-  }, [emojiData, textData])
-
-  // pickerState: quick emoji picker (Trigger A — new entry, no emoji yet)
-  const [pickerState, setPickerState] = useState<{
-    day: number
-    year: number
-    month: number
-  } | null>(null)
-
-  // modalState: full entry modal
-  const [modalState, setModalState] = useState<{
-    day: number
-    year: number
-    month: number
-    isEditing: boolean
-  } | null>(null)
-
-  const [showYearPicker, setShowYearPicker] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [hideDates, setHideDates] = useState(false)
 
   const currentEmojis = emojiData[emojiKey(viewYear, viewMonth)] ?? {}
   const currentTexts = textData[emojiKey(viewYear, viewMonth)] ?? {}
 
+  // --- 날짜 클릭 ---
   const handleDayClick = (day: number) => {
     const hasEmoji = !!emojiData[emojiKey(viewYear, viewMonth)]?.[day]
     if (hasEmoji) {
-      // Trigger B: open modal directly with existing data
       setModalState({ day, year: viewYear, month: viewMonth, isEditing: true })
     } else {
-      // Trigger A: show emoji picker first
       setPickerState({ day, year: viewYear, month: viewMonth })
     }
   }
 
-  // Called after Trigger A emoji selection — transition to entry modal
+  // --- 이모지 선택 (Trigger A) ---
   const handleEmojiSelect = (emoji: string) => {
     if (!pickerState) return
     const key = emojiKey(pickerState.year, pickerState.month)
-    setEmojiData((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? {}), [pickerState.day]: emoji },
-    }))
+    const newEmojis = { ...emojiData, [key]: { ...(emojiData[key] ?? {}), [pickerState.day]: emoji } }
+    setEmojiData(newEmojis)
+    scheduleSave(newEmojis, textData)
     const { day, year, month } = pickerState
     setPickerState(null)
     setModalState({ day, year, month, isEditing: false })
@@ -156,67 +155,97 @@ export function CalendarApp() {
   const handleClear = () => {
     if (!pickerState) return
     const key = emojiKey(pickerState.year, pickerState.month)
-    setEmojiData((prev) => {
-      const updated = { ...(prev[key] ?? {}) }
-      delete updated[pickerState.day]
-      return { ...prev, [key]: updated }
-    })
+    const updated = { ...(emojiData[key] ?? {}) }
+    delete updated[pickerState.day]
+    const newEmojis = { ...emojiData, [key]: updated }
+    setEmojiData(newEmojis)
+    scheduleSave(newEmojis, textData)
     setPickerState(null)
   }
 
+  // --- 모달 저장 ---
   const handleModalSave = (emoji: string, text: string, newDate: Date) => {
     if (!modalState) return
     const oldKey = emojiKey(modalState.year, modalState.month)
     const newKey = emojiKey(newDate.getFullYear(), newDate.getMonth())
     const newDay = newDate.getDate()
 
-    // Remove from old date if date changed
+    let newEmojis = { ...emojiData }
+    let newTexts = { ...textData }
+
+    // 날짜가 바뀐 경우 기존 날짜에서 삭제
     if (oldKey !== newKey || modalState.day !== newDay) {
-      setEmojiData((prev) => {
-        const updated = { ...(prev[oldKey] ?? {}) }
-        delete updated[modalState.day]
-        return { ...prev, [oldKey]: updated }
-      })
-      setTextData((prev) => {
-        const updated = { ...(prev[oldKey] ?? {}) }
-        delete updated[modalState.day]
-        return { ...prev, [oldKey]: updated }
-      })
+      const updatedOldEmojis = { ...(newEmojis[oldKey] ?? {}) }
+      delete updatedOldEmojis[modalState.day]
+      newEmojis = { ...newEmojis, [oldKey]: updatedOldEmojis }
+
+      const updatedOldTexts = { ...(newTexts[oldKey] ?? {}) }
+      delete updatedOldTexts[modalState.day]
+      newTexts = { ...newTexts, [oldKey]: updatedOldTexts }
     }
 
-    setEmojiData((prev) => ({
-      ...prev,
-      [newKey]: { ...(prev[newKey] ?? {}), [newDay]: emoji },
-    }))
-    setTextData((prev) => ({
-      ...prev,
-      [newKey]: { ...(prev[newKey] ?? {}), [newDay]: text },
-    }))
+    newEmojis = { ...newEmojis, [newKey]: { ...(newEmojis[newKey] ?? {}), [newDay]: emoji } }
+    newTexts = { ...newTexts, [newKey]: { ...(newTexts[newKey] ?? {}), [newDay]: text } }
+
+    setEmojiData(newEmojis)
+    setTextData(newTexts)
+    scheduleSave(newEmojis, newTexts)
     setModalState(null)
   }
 
+  // --- 모달 삭제 ---
   const handleModalDelete = () => {
     if (!modalState) return
     const key = emojiKey(modalState.year, modalState.month)
-    setEmojiData((prev) => {
-      const updated = { ...(prev[key] ?? {}) }
-      delete updated[modalState.day]
-      return { ...prev, [key]: updated }
-    })
-    setTextData((prev) => {
-      const updated = { ...(prev[key] ?? {}) }
-      delete updated[modalState.day]
-      return { ...prev, [key]: updated }
-    })
+
+    const newEmojis = { ...emojiData }
+    const updatedEmojis = { ...(newEmojis[key] ?? {}) }
+    delete updatedEmojis[modalState.day]
+    newEmojis[key] = updatedEmojis
+
+    const newTexts = { ...textData }
+    const updatedTexts = { ...(newTexts[key] ?? {}) }
+    delete updatedTexts[modalState.day]
+    newTexts[key] = updatedTexts
+
+    setEmojiData(newEmojis)
+    setTextData(newTexts)
+    scheduleSave(newEmojis, newTexts)
     setModalState(null)
   }
 
+  // --- 하루 시작 시간 변경 ---
   const handleChangeDayStartHour = (hour: number) => {
     setDayStartHour(hour)
-    localStorage.setItem("dayStartHour", String(hour))
+    if (user) {
+      saveUserData(user.uid, { dayStartHour: hour }).catch(console.error)
+    }
   }
 
   const years = [2024, 2025, 2026, 2027]
+
+  // --- 인증 로딩 중 ---
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#1C1C1E] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      </div>
+    )
+  }
+
+  // --- 로그인 안 된 경우 ---
+  if (!user) {
+    return <LoginScreen />
+  }
+
+  // --- 데이터 로딩 중 ---
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-[#1C1C1E] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="relative min-h-screen bg-[#1C1C1E]">
@@ -262,6 +291,25 @@ export function CalendarApp() {
             >
               <Settings className="w-6 h-6" strokeWidth={1} />
             </button>
+            {/* 유저 프로필 / 로그아웃 */}
+            {user.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.photoURL}
+                alt={user.displayName ?? "profile"}
+                className="w-7 h-7 rounded-full opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={() => signOut()}
+                title="로그아웃"
+              />
+            ) : (
+              <button
+                className="text-white/60 hover:text-white transition-colors"
+                aria-label="로그아웃"
+                onClick={() => signOut()}
+              >
+                <LogOut className="w-6 h-6" strokeWidth={1} />
+              </button>
+            )}
           </div>
         </header>
 
@@ -288,38 +336,38 @@ export function CalendarApp() {
           </div>
         )}
 
-        {/* Month tabs + Calendar card — vertically centered in remaining space */}
-        <div className="flex-1 flex flex-col justify-center" style={{ maxWidth: '390px', margin: '0 auto', width: '100%' }}>
+        {/* Month tabs + Calendar card */}
+        <div className="flex-1 flex flex-col justify-center" style={{ maxWidth: "390px", margin: "0 auto", width: "100%" }}>
           <div className="mb-2 -mx-4">
             <MonthTabs selectedMonth={viewMonth} onSelect={setViewMonth} />
           </div>
-          {/* Fixed-height wrapper = max 6-row card height (408px), so vertical centering doesn't jump between months */}
+          {/* Fixed-height wrapper = max 6-row card height (408px) */}
           <div className="w-full" style={{ minHeight: 408 }}>
-          <div
-            key={calAnimKey}
-            className="w-full overflow-hidden"
-            style={{
-              animation: calAnim === 'from-right'
-                ? 'calFromRight 280ms ease-out forwards'
-                : calAnim === 'from-left'
-                ? 'calFromLeft 280ms ease-out forwards'
-                : undefined,
-            }}
-            onTouchStart={onSwipeTouchStart}
-            onTouchEnd={onSwipeTouchEnd}
-            onMouseDown={onSwipeMouseDown}
-          >
-            <ShapedCalendarCard year={viewYear} month={viewMonth} className="w-full">
-              <CalendarGrid
-                year={viewYear}
-                month={viewMonth}
-                today={today}
-                emojiMap={currentEmojis}
-                onDayClick={handleDayClick}
-                hideDates={hideDates}
-              />
-            </ShapedCalendarCard>
-          </div>
+            <div
+              key={calAnimKey}
+              className="w-full overflow-hidden"
+              style={{
+                animation: calAnim === "from-right"
+                  ? "calFromRight 280ms ease-out forwards"
+                  : calAnim === "from-left"
+                  ? "calFromLeft 280ms ease-out forwards"
+                  : undefined,
+              }}
+              onTouchStart={onSwipeTouchStart}
+              onTouchEnd={onSwipeTouchEnd}
+              onMouseDown={onSwipeMouseDown}
+            >
+              <ShapedCalendarCard year={viewYear} month={viewMonth} className="w-full">
+                <CalendarGrid
+                  year={viewYear}
+                  month={viewMonth}
+                  today={today}
+                  emojiMap={currentEmojis}
+                  onDayClick={handleDayClick}
+                  hideDates={hideDates}
+                />
+              </ShapedCalendarCard>
+            </div>
           </div>
         </div>
       </div>
@@ -343,7 +391,7 @@ export function CalendarApp() {
         <Plus className="w-7 h-7 text-black" strokeWidth={1.5} />
       </button>
 
-      {/* Trigger A: Emoji picker (new entry — pick emoji first) */}
+      {/* Trigger A: Emoji picker */}
       {pickerState && (
         <EmojiPicker
           date={new Date(pickerState.year, pickerState.month, pickerState.day)}
@@ -354,7 +402,7 @@ export function CalendarApp() {
         />
       )}
 
-      {/* Entry modal (shown after emoji selection or when editing existing entry) */}
+      {/* Entry modal */}
       {modalState && (
         <EntryModal
           date={new Date(modalState.year, modalState.month, modalState.day)}
@@ -370,10 +418,7 @@ export function CalendarApp() {
 
       {/* Backdrop for year picker */}
       {showYearPicker && (
-        <div
-          className="fixed inset-0 z-30"
-          onClick={() => setShowYearPicker(false)}
-        />
+        <div className="fixed inset-0 z-30" onClick={() => setShowYearPicker(false)} />
       )}
 
       {/* Settings modal */}
