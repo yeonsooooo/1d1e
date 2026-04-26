@@ -64,7 +64,56 @@ export function EntryModal({
   const [canScrollUp, setCanScrollUp] = useState(false)
   const [canScrollDown, setCanScrollDown] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [isVisible, setIsVisible] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const dragStartY = useRef<number | null>(null)
+
+  useEffect(() => {
+    const id = setTimeout(() => setIsVisible(true), 10)
+    return () => clearTimeout(id)
+  }, [])
+
+  const handleClose = () => {
+    setIsVisible(false)
+    setTimeout(onClose, 280)
+  }
+
+  const onHandleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY
+  }
+  const onHandleTouchEnd = (e: React.TouchEvent) => {
+    if (dragStartY.current === null) return
+    const dy = e.changedTouches[0].clientY - dragStartY.current
+    if (!isExpanded && dy < -40) setIsExpanded(true)
+    else if (isExpanded && dy > 40) setIsExpanded(false)
+    dragStartY.current = null
+  }
+  const onHandleMouseDown = (e: React.MouseEvent) => {
+    const startY = e.clientY
+    const onUp = (ev: MouseEvent) => {
+      const dy = ev.clientY - startY
+      if (!isExpanded && dy < -40) setIsExpanded(true)
+      else if (isExpanded && dy > 40) setIsExpanded(false)
+      document.removeEventListener("mouseup", onUp)
+    }
+    document.addEventListener("mouseup", onUp)
+  }
+  const onHandleClick = () => {
+    if (isExpanded) setIsExpanded(false)
+  }
+
+  const handleSave = () => {
+    if (!emoji) return
+    setIsVisible(false)
+    setTimeout(() => onSave(emoji, text, selectedDate), 280)
+  }
+
+  const handleDelete = () => {
+    if (!onDelete) return
+    setIsVisible(false)
+    setTimeout(onDelete, 280)
+  }
 
   // 키보드 높이 감지 — visualViewport API
   useEffect(() => {
@@ -94,11 +143,6 @@ export function EntryModal({
     setCanScrollUp(el.scrollTop > 2)
     setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 2)
   }, [])
-
-  const handleSave = () => {
-    if (!emoji) return
-    onSave(emoji, text, selectedDate)
-  }
 
   const handleEmojiSelected = (selected: string) => {
     setEmoji(selected)
@@ -140,34 +184,56 @@ export function EntryModal({
       {/* Dimmed backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/70"
-        onClick={onClose}
+        style={{ opacity: isVisible ? 1 : 0, transition: "opacity 300ms ease-out" }}
+        onClick={handleClose}
         aria-hidden="true"
       />
 
-      {/* Floating detached card */}
+      {/* Bottom sheet */}
       <div
-        className="fixed inset-x-4 z-50 rounded-[32px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
+        className="fixed inset-x-0 z-50 rounded-t-[32px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
         style={{
-          maxWidth: 420,
-          margin: "0 auto",
-          ...(keyboardHeight > 0
-            ? { bottom: keyboardHeight, top: "auto", transform: "none" }
-            : { top: "50%", transform: "translateY(-55%)" }
-          ),
+          bottom: keyboardHeight,
+          height: isExpanded ? `calc(100dvh - 88px - ${keyboardHeight}px)` : undefined,
+          transform: isVisible ? "translateY(0)" : "translateY(100%)",
+          transition: "transform 300ms ease-out, height 300ms ease-out",
         }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="일기 항목"
       >
-        {/* Top nav */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <button
-            onClick={onClose}
-            className="text-white/50 hover:text-white transition-colors w-10 h-10 flex items-center justify-start"
-          >
-            <X className="w-6 h-6" strokeWidth={1.5} />
-          </button>
+        {/* Handle */}
+        <div
+          className="flex justify-center items-center pt-3 pb-1 shrink-0"
+          style={{ minHeight: 32, touchAction: "none" }}
+          onTouchStart={onHandleTouchStart}
+          onTouchEnd={onHandleTouchEnd}
+          onMouseDown={onHandleMouseDown}
+          onClick={onHandleClick}
+        >
+          {isExpanded ? (
+            <svg width="40" height="10" viewBox="0 0 40 10" fill="none">
+              <path d="M4 3L20 8L36 3" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : (
+            <div className="w-10 h-1 rounded-full bg-white/25" />
+          )}
+        </div>
+
+        {/* Top nav — 삭제 왼쪽, X 오른쪽 */}
+        <div className="flex items-center justify-between px-5 pt-2 pb-3">
+          {isEditing && onDelete ? (
+            <button
+              onClick={handleDelete}
+              className="w-10 h-10 flex items-center justify-start hover:opacity-70 transition-opacity"
+              style={{ color: "#FF5F57" }}
+            >
+              <Trash2 className="w-5 h-5" strokeWidth={1.5} />
+            </button>
+          ) : (
+            <div className="w-10" />
+          )}
 
           {/* Date button with chevron */}
           <button
@@ -187,17 +253,12 @@ export function EntryModal({
             />
           </button>
 
-          {isEditing && onDelete ? (
-            <button
-              onClick={onDelete}
-              className="w-10 h-10 flex items-center justify-end hover:opacity-70 transition-opacity"
-              style={{ color: "#FF5F57" }}
-            >
-              <Trash2 className="w-5 h-5" strokeWidth={1.5} />
-            </button>
-          ) : (
-            <div className="w-10" />
-          )}
+          <button
+            onClick={handleClose}
+            className="text-white/50 hover:text-white transition-colors w-10 h-10 flex items-center justify-end"
+          >
+            <X className="w-6 h-6" strokeWidth={1.5} />
+          </button>
         </div>
 
         {/* Date picker — absolute overlay covering modal body */}

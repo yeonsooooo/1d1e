@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { X, ChevronRight } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { X, ChevronDown, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SettingsModalProps {
@@ -19,22 +19,86 @@ function formatHour(hour: number): string {
 
 export function SettingsModal({ dayStartHour, onChangeDayStartHour, onClose }: SettingsModalProps) {
   const [showHourPicker, setShowHourPicker] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const dragStartY = useRef<number | null>(null)
+
+  useEffect(() => {
+    const id = setTimeout(() => setIsVisible(true), 10)
+    return () => clearTimeout(id)
+  }, [])
+
+  const handleClose = () => {
+    setIsVisible(false)
+    setTimeout(onClose, 280)
+  }
+
+  const onHandleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY
+  }
+  const onHandleTouchEnd = (e: React.TouchEvent) => {
+    if (dragStartY.current === null) return
+    const dy = e.changedTouches[0].clientY - dragStartY.current
+    if (!isExpanded && dy < -40) setIsExpanded(true)
+    else if (isExpanded && dy > 40) setIsExpanded(false)
+    dragStartY.current = null
+  }
+  const onHandleMouseDown = (e: React.MouseEvent) => {
+    const startY = e.clientY
+    const onUp = (ev: MouseEvent) => {
+      const dy = ev.clientY - startY
+      if (!isExpanded && dy < -40) setIsExpanded(true)
+      else if (isExpanded && dy > 40) setIsExpanded(false)
+      document.removeEventListener("mouseup", onUp)
+    }
+    document.addEventListener("mouseup", onUp)
+  }
+  const onHandleClick = () => {
+    if (isExpanded) setIsExpanded(false)
+  }
 
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/60" style={{ zIndex: 40 }} onClick={onClose} />
-
-      {/* Modal card */}
       <div
-        className="fixed inset-x-4 top-1/2 -translate-y-[55%] rounded-[28px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
-        style={{ zIndex: 50, maxWidth: 390, margin: "0 auto" }}
+        className="fixed inset-0 bg-black/60"
+        style={{ zIndex: 40, opacity: isVisible ? 1 : 0, transition: "opacity 300ms ease-out" }}
+        onClick={handleClose}
+      />
+
+      {/* Bottom sheet */}
+      <div
+        className="fixed inset-x-0 bottom-0 rounded-t-[32px] bg-[#353535] border border-white/15 flex flex-col overflow-hidden"
+        style={{
+          zIndex: 50,
+          height: isExpanded ? "calc(100dvh - 88px)" : undefined,
+          transform: isVisible ? "translateY(0)" : "translateY(100%)",
+          transition: "transform 300ms ease-out, height 300ms ease-out",
+        }}
       >
+        {/* Handle */}
+        <div
+          className="flex justify-center items-center pt-3 pb-1"
+          style={{ minHeight: 32, touchAction: "none" }}
+          onTouchStart={onHandleTouchStart}
+          onTouchEnd={onHandleTouchEnd}
+          onMouseDown={onHandleMouseDown}
+          onClick={onHandleClick}
+        >
+          {isExpanded ? (
+            <svg width="40" height="10" viewBox="0 0 40 10" fill="none">
+              <path d="M4 3L20 8L36 3" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : (
+            <div className="w-10 h-1 rounded-full bg-white/25" />
+          )}
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-2">
+        <div className="flex items-center justify-between px-5 pt-2 pb-2">
           <span className="text-white font-bold text-base">설정</span>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-white/50 hover:text-white transition-colors w-10 h-10 flex items-center justify-end"
           >
             <X className="w-6 h-6" strokeWidth={1.5} />

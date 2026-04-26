@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Settings, ChevronDown, Eye, EyeOff, Plus } from "lucide-react"
 import { CalendarGrid } from "@/components/calendar-grid"
 import { MonthTabs } from "@/components/month-tabs"
@@ -63,6 +63,38 @@ export function CalendarApp() {
 
   const [viewYear, setViewYear] = useState(() => getAdjustedToday(getStoredDayStartHour()).getFullYear())
   const [viewMonth, setViewMonth] = useState(() => getAdjustedToday(getStoredDayStartHour()).getMonth())
+  const [calAnimKey, setCalAnimKey] = useState(0)
+  const [calAnim, setCalAnim] = useState<'from-left' | 'from-right' | null>(null)
+  const swipeStartX = useRef<number | null>(null)
+
+  const navMonth = useCallback((dir: 'prev' | 'next') => {
+    setCalAnim(dir === 'next' ? 'from-right' : 'from-left')
+    setCalAnimKey(k => k + 1)
+    if (dir === 'next') {
+      setViewMonth(m => { if (m === 11) { setViewYear(y => y + 1); return 0 } return m + 1 })
+    } else {
+      setViewMonth(m => { if (m === 0) { setViewYear(y => y - 1); return 11 } return m - 1 })
+    }
+  }, [])
+
+  const onSwipeTouchStart = (e: React.TouchEvent) => { swipeStartX.current = e.touches[0].clientX }
+  const onSwipeTouchEnd = (e: React.TouchEvent) => {
+    if (swipeStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - swipeStartX.current
+    if (dx < -50) navMonth('next')
+    else if (dx > 50) navMonth('prev')
+    swipeStartX.current = null
+  }
+  const onSwipeMouseDown = (e: React.MouseEvent) => {
+    const startX = e.clientX
+    const onUp = (ev: MouseEvent) => {
+      const dx = ev.clientX - startX
+      if (dx < -50) navMonth('next')
+      else if (dx > 50) navMonth('prev')
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mouseup', onUp)
+  }
   const [emojiData, setEmojiData] = useState<Record<string, Record<number, string>>>(
     () => loadEntries().emojis
   )
@@ -261,16 +293,34 @@ export function CalendarApp() {
           <div className="mb-2 -mx-4">
             <MonthTabs selectedMonth={viewMonth} onSelect={setViewMonth} />
           </div>
-          <ShapedCalendarCard year={viewYear} month={viewMonth} className="w-full">
-            <CalendarGrid
-              year={viewYear}
-              month={viewMonth}
-              today={today}
-              emojiMap={currentEmojis}
-              onDayClick={handleDayClick}
-              hideDates={hideDates}
-            />
-          </ShapedCalendarCard>
+          {/* Fixed-height wrapper = max 6-row card height (408px), so vertical centering doesn't jump between months */}
+          <div className="w-full" style={{ minHeight: 408 }}>
+          <div
+            key={calAnimKey}
+            className="w-full overflow-hidden"
+            style={{
+              animation: calAnim === 'from-right'
+                ? 'calFromRight 280ms ease-out forwards'
+                : calAnim === 'from-left'
+                ? 'calFromLeft 280ms ease-out forwards'
+                : undefined,
+            }}
+            onTouchStart={onSwipeTouchStart}
+            onTouchEnd={onSwipeTouchEnd}
+            onMouseDown={onSwipeMouseDown}
+          >
+            <ShapedCalendarCard year={viewYear} month={viewMonth} className="w-full">
+              <CalendarGrid
+                year={viewYear}
+                month={viewMonth}
+                today={today}
+                emojiMap={currentEmojis}
+                onDayClick={handleDayClick}
+                hideDates={hideDates}
+              />
+            </ShapedCalendarCard>
+          </div>
+          </div>
         </div>
       </div>
 
