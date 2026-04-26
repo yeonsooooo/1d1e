@@ -30,13 +30,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthLoading(false)
       return
     }
-    // redirect 로그인 결과 처리
-    getRedirectResult(auth).catch(() => {})
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u)
-      setAuthLoading(false)
-    })
-    return unsubscribe
+
+    let unsubscribeFn: (() => void) | null = null
+
+    const init = async () => {
+      // redirect 로그인 후 돌아왔을 때 결과를 먼저 처리
+      // (처리 전에 onAuthStateChanged가 null로 튀는 것을 방지)
+      try {
+        await getRedirectResult(auth)
+      } catch {}
+
+      // redirect 결과가 처리된 후에 auth 상태 구독
+      unsubscribeFn = onAuthStateChanged(auth, (u) => {
+        setUser(u)
+        setAuthLoading(false)
+      })
+    }
+
+    init()
+
+    return () => {
+      unsubscribeFn?.()
+    }
   }, [])
 
   const signInWithGoogle = async () => {
