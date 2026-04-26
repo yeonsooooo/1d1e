@@ -5,6 +5,8 @@ import {
   User,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from "firebase/auth"
@@ -24,6 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
+    if (!auth) {
+      setAuthLoading(false)
+      return
+    }
+    // redirect 로그인 결과 처리
+    getRedirectResult(auth).catch(() => {})
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setAuthLoading(false)
@@ -32,11 +40,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signInWithGoogle = async () => {
+    if (!auth) return
     const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    if (isMobile) {
+      await signInWithRedirect(auth, provider)
+    } else {
+      await signInWithPopup(auth, provider)
+    }
   }
 
   const signOut = async () => {
+    if (!auth) return
     await firebaseSignOut(auth)
   }
 

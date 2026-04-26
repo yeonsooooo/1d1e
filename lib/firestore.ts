@@ -12,6 +12,7 @@ export function subscribeUserData(
   uid: string,
   callback: (data: UserData | null) => void
 ): () => void {
+  if (!db) return () => {}
   const ref = doc(db, "users", uid)
   return onSnapshot(ref, (snap) => {
     if (snap.exists()) {
@@ -29,12 +30,14 @@ export function subscribeUserData(
 
 /** Firestore에 유저 데이터 저장 (merge) */
 export async function saveUserData(uid: string, data: Partial<UserData>): Promise<void> {
+  if (!db) return
   const ref = doc(db, "users", uid)
   await setDoc(ref, data, { merge: true })
 }
 
 /** localStorage 데이터를 Firestore로 마이그레이션 (최초 1회) */
 export async function migrateFromLocalStorage(uid: string): Promise<void> {
+  if (!db) return
   // 이미 Firestore에 데이터가 있으면 스킵
   const ref = doc(db, "users", uid)
   const snap = await getDoc(ref)
