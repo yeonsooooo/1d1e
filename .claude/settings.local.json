@@ -15,7 +15,9 @@
       "Bash(curl -s http://localhost:3000)",
       "Bash(kill %1)",
       "Bash(npm install *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" remote set-url origin git@github.com:yeonsooooo/1d1e.git)",
+      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" push)"
     ]
   }
 }
