@@ -97,8 +97,11 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html {
+  html, body {
     font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground;

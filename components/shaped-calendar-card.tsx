@@ -13,7 +13,7 @@ const HEADER_H = 36  // day-labels row height (py-2 + text = ~36px)
 const ROW_H = 46     // each calendar row (h-[46px])
 const GAP = 12       // gap-3 between rows, and mb-3 after header (both 12px)
 const PAD = 12       // uniform padding on all four sides (card padding: 12px)
-const R = 29         // corner radius
+const R = 36         // corner radius
 
 /**
  * Build an SVG path string for the L-shaped / stair-step card.
