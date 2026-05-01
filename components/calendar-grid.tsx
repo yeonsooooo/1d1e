@@ -11,9 +11,10 @@ interface CalendarGridProps {
   emojiMap: Record<number, string> // day number -> emoji
   onDayClick: (day: number) => void
   hideDates?: boolean
+  holidays?: Set<string> // "YYYY-MM-DD"
 }
 
-export function CalendarGrid({ year, month, today, emojiMap, onDayClick, hideDates = false }: CalendarGridProps) {
+export function CalendarGrid({ year, month, today, emojiMap, onDayClick, hideDates = false, holidays }: CalendarGridProps) {
   const firstDay = new Date(year, month, 1).getDay() // 0 = Sunday
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const daysInPrevMonth = new Date(year, month, 0).getDate()
@@ -73,6 +74,8 @@ export function CalendarGrid({ year, month, today, emojiMap, onDayClick, hideDat
               const isSunday = ci === 0
               const todayCell = isToday(day)
               const emoji = emojiMap[day]
+              const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+              const isHoliday = holidays?.has(dateStr) ?? false
 
               return (
                 <button
@@ -102,7 +105,7 @@ export function CalendarGrid({ year, month, today, emojiMap, onDayClick, hideDat
                     // Normal date number — 24px light
                     <span className={cn(
                       "text-[24px] font-light",
-                      isSunday ? "text-[#C191FF]" : "text-white"
+                      isSunday || isHoliday ? "text-[#C191FF]" : "text-white"
                     )}>
                       {day}
                     </span>

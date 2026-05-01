@@ -10,6 +10,7 @@ import { SettingsModal } from "@/components/settings-modal"
 import { ShapedCalendarCard } from "@/components/shaped-calendar-card"
 import { useAuth } from "@/components/auth-provider"
 import { subscribeUserData, saveUserData, migrateFromLocalStorage } from "@/lib/firestore"
+import { getKoreanHolidays } from "@/lib/holidays"
 import { cn } from "@/lib/utils"
 
 function loadFromLocalStorage() {
@@ -71,6 +72,7 @@ export function CalendarApp() {
   const [showYearPicker, setShowYearPicker] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [hideDates, setHideDates] = useState(false)
+  const [holidays, setHolidays] = useState<Set<string>>(new Set())
 
   // Firestore 저장 디바운스 ref
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -259,7 +261,12 @@ export function CalendarApp() {
     }
   }
 
-  const years = [2024, 2025, 2026, 2027]
+  useEffect(() => {
+    getKoreanHolidays(viewYear).then(setHolidays)
+  }, [viewYear])
+
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: currentYear - 2019 + 3 }, (_, i) => 2020 + i)
 
   // --- 인증 로딩 중 ---
   if (authLoading) {
@@ -378,6 +385,7 @@ export function CalendarApp() {
                   emojiMap={currentEmojis}
                   onDayClick={handleDayClick}
                   hideDates={hideDates}
+                  holidays={holidays}
                 />
               </ShapedCalendarCard>
             </div>
