@@ -35,9 +35,9 @@ export function CalendarApp() {
 
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
-  const [calAnimKey, setCalAnimKey] = useState(0)
-  const [calAnim, setCalAnim] = useState<"from-left" | "from-right" | null>(null)
-  const swipeStartX = useRef<number | null>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
+  const dragStartX = useRef<number | null>(null)
+  const isDragging = useRef(false)
 
   const [emojiData, setEmojiData] = useState<Record<string, Record<string, string>>>({})
   const [textData, setTextData] = useState<Record<string, Record<string, string>>>({})
@@ -98,32 +98,69 @@ export function CalendarApp() {
   )
 
   // --- 월 네비게이션 ---
+  // strip을 특정 방향으로 animate 후 월 변경
   const navMonth = useCallback((dir: "prev" | "next") => {
-    setCalAnim(dir === "next" ? "from-right" : "from-left")
-    setCalAnimKey((k) => k + 1)
-    if (dir === "next") {
-      setViewMonth((m) => { if (m === 11) { setViewYear((y) => y + 1); return 0 } return m + 1 })
-    } else {
-      setViewMonth((m) => { if (m === 0) { setViewYear((y) => y - 1); return 11 } return m - 1 })
-    }
+    const strip = stripRef.current
+    if (!strip) return
+    strip.style.transition = "transform 300ms ease-out"
+    strip.style.transform = dir === "next" ? "translateX(-66.6666%)" : "translateX(0%)"
+    setTimeout(() => {
+      strip.style.transition = "none"
+      if (dir === "next") {
+        setViewMonth((m) => { if (m === 11) { setViewYear((y) => y + 1); return 0 } return m + 1 })
+      } else {
+        setViewMonth((m) => { if (m === 0) { setViewYear((y) => y - 1); return 11 } return m - 1 })
+      }
+    }, 300)
   }, [])
 
-  const onSwipeTouchStart = (e: React.TouchEvent) => { swipeStartX.current = e.touches[0].clientX }
-  const onSwipeTouchEnd = (e: React.TouchEvent) => {
-    if (swipeStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - swipeStartX.current
-    if (dx < -50) navMonth("next")
-    else if (dx > 50) navMonth("prev")
-    swipeStartX.current = null
+  // 드래그 시작: transition 끄고 시작점 기록
+  const onDragStart = (clientX: number) => {
+    const strip = stripRef.current
+    if (!strip) return
+    strip.style.transition = "none"
+    dragStartX.current = clientX
+    isDragging.current = true
   }
+  // 드래그 중: strip을 손가락/마우스 위치에 맞춰 이동
+  const onDragMove = (clientX: number) => {
+    if (!isDragging.current || dragStartX.current === null) return
+    const strip = stripRef.current
+    if (!strip) return
+    const containerW = strip.parentElement?.clientWidth ?? strip.clientWidth / 3
+    const dx = clientX - dragStartX.current
+    const pct = Math.max(-66.6666, Math.min(0, -33.3333 + (dx / containerW) * 33.3333))
+    strip.style.transform = `translateX(${pct}%)`
+  }
+  // 드래그 종료: 임계값 초과 시 월 전환, 아니면 원위치
+  const onDragEnd = (clientX: number) => {
+    if (!isDragging.current || dragStartX.current === null) return
+    isDragging.current = false
+    const strip = stripRef.current
+    if (!strip) return
+    const containerW = strip.parentElement?.clientWidth ?? strip.clientWidth / 3
+    const dx = clientX - dragStartX.current
+    dragStartX.current = null
+    if (dx < -containerW * 0.2) navMonth("next")
+    else if (dx > containerW * 0.2) navMonth("prev")
+    else {
+      strip.style.transition = "transform 300ms ease-out"
+      strip.style.transform = "translateX(-33.3333%)"
+    }
+  }
+
+  const onSwipeTouchStart = (e: React.TouchEvent) => onDragStart(e.touches[0].clientX)
+  const onSwipeTouchMove = (e: React.TouchEvent) => onDragMove(e.touches[0].clientX)
+  const onSwipeTouchEnd = (e: React.TouchEvent) => onDragEnd(e.changedTouches[0].clientX)
   const onSwipeMouseDown = (e: React.MouseEvent) => {
-    const startX = e.clientX
+    onDragStart(e.clientX)
+    const onMove = (ev: MouseEvent) => onDragMove(ev.clientX)
     const onUp = (ev: MouseEvent) => {
-      const dx = ev.clientX - startX
-      if (dx < -50) navMonth("next")
-      else if (dx > 50) navMonth("prev")
+      onDragEnd(ev.clientX)
+      document.removeEventListener("mousemove", onMove)
       document.removeEventListener("mouseup", onUp)
     }
+    document.addEventListener("mousemove", onMove)
     document.addEventListener("mouseup", onUp)
   }
 
