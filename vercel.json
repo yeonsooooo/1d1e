@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/api/holidays/[year]/route.ts": {
+      "regions": ["icn1"]
+    }
+  }
+}
