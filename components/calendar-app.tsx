@@ -1,17 +1,40 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Settings, ChevronDown, Eye, EyeOff, Plus, LogOut } from "lucide-react"
+import { Settings, ChevronDown, Eye, EyeOff, Plus } from "lucide-react"
 import { CalendarGrid } from "@/components/calendar-grid"
 import { MonthTabs } from "@/components/month-tabs"
 import { EmojiPicker } from "@/components/emoji-picker"
 import { EntryModal } from "@/components/entry-modal"
 import { SettingsModal } from "@/components/settings-modal"
 import { ShapedCalendarCard } from "@/components/shaped-calendar-card"
-import { LoginScreen } from "@/components/login-screen"
 import { useAuth } from "@/components/auth-provider"
 import { subscribeUserData, saveUserData, migrateFromLocalStorage } from "@/lib/firestore"
 import { cn } from "@/lib/utils"
+
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem("1d1e-entries")
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return { emojis: parsed.emojis ?? {}, texts: parsed.texts ?? {} }
+    }
+  } catch {}
+  return { emojis: {}, texts: {} }
+}
+
+function saveToLocalStorage(
+  emojis: Record<string, Record<string, string>>,
+  texts: Record<string, Record<string, string>>
+) {
+  try {
+    localStorage.setItem("1d1e-entries", JSON.stringify({ emojis, texts }))
+  } catch {}
+}
+
+function getStoredDayStartHour() {
+  return parseInt(localStorage.getItem("dayStartHour") ?? "0", 10)
+}
 
 function getAdjustedToday(dayStartHour: number): Date {
   const now = new Date()
@@ -52,10 +75,16 @@ export function CalendarApp() {
   // Firestore 저장 디바운스 ref
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // --- Firestore 구독 ---
+  // --- 데이터 로딩 (로그인 여부에 따라 Firestore or localStorage) ---
   useEffect(() => {
+    if (authLoading) return
+
     if (!user) {
-      setDataLoaded(false)
+      const stored = loadFromLocalStorage()
+      setEmojiData(stored.emojis)
+      setTextData(stored.texts)
+      setDayStartHour(getStoredDayStartHour())
+      setDataLoaded(true)
       return
     }
 
@@ -63,10 +92,8 @@ export function CalendarApp() {
 
     const unsubscribe = subscribeUserData(user.uid, async (data) => {
       if (data === null && firstSnapshot) {
-        // 최초 로그인: localStorage 데이터를 Firestore로 마이그레이션
         firstSnapshot = false
         await migrateFromLocalStorage(user.uid)
-        // 마이그레이션 후 onSnapshot이 다시 호출됨
         return
       }
       firstSnapshot = false
@@ -83,15 +110,18 @@ export function CalendarApp() {
       unsubscribe()
       setDataLoaded(false)
     }
-  }, [user])
+  }, [user, authLoading])
 
-  // --- Firestore 저장 (디바운스 500ms) ---
+  // --- 저장 (디바운스 500ms, 로그인 여부에 따라 Firestore or localStorage) ---
   const scheduleSave = useCallback(
     (emojis: Record<string, Record<string, string>>, texts: Record<string, Record<string, string>>) => {
-      if (!user) return
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
       saveTimerRef.current = setTimeout(() => {
-        saveUserData(user.uid, { emojis, texts }).catch(console.error)
+        if (user) {
+          saveUserData(user.uid, { emojis, texts }).catch(console.error)
+        } else {
+          saveToLocalStorage(emojis, texts)
+        }
       }, 500)
     },
     [user]
@@ -240,11 +270,6 @@ export function CalendarApp() {
     )
   }
 
-  // --- 로그인 안 된 경우 ---
-  if (!user) {
-    return <LoginScreen />
-  }
-
   // --- 데이터 로딩 중 ---
   if (!dataLoaded) {
     return (
@@ -298,25 +323,6 @@ export function CalendarApp() {
             >
               <Settings className="w-6 h-6" strokeWidth={1} />
             </button>
-            {/* 유저 프로필 / 로그아웃 */}
-            {user.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.photoURL}
-                alt={user.displayName ?? "profile"}
-                className="w-7 h-7 rounded-full opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={() => signOut()}
-                title="로그아웃"
-              />
-            ) : (
-              <button
-                className="text-white/60 hover:text-white transition-colors"
-                aria-label="로그아웃"
-                onClick={() => signOut()}
-              >
-                <LogOut className="w-6 h-6" strokeWidth={1} />
-              </button>
-            )}
           </div>
         </header>
 
