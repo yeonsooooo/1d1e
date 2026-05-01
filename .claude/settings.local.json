@@ -24,7 +24,9 @@
       "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 470e71e --stat)",
       "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 5762ec7 --stat)",
       "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 5762ec7 -- components/calendar-app.tsx)",
-      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 5762ec7:components/calendar-app.tsx)"
+      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 5762ec7:components/calendar-app.tsx)",
+      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show HEAD:components/settings-modal.tsx)",
+      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" diff HEAD --name-only)"
     ]
   }
 }

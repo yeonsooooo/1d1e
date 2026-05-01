@@ -199,6 +199,9 @@ export function EntryModal({
           transition: "transform 300ms ease-out, height 300ms ease-out",
         }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={onHandleTouchStart}
+        onTouchEnd={onHandleTouchEnd}
+        onMouseDown={onHandleMouseDown}
         role="dialog"
         aria-modal="true"
         aria-label="일기 항목"
@@ -207,9 +210,6 @@ export function EntryModal({
         <div
           className="flex justify-center items-center pt-3 pb-1 shrink-0"
           style={{ minHeight: 32, touchAction: "none" }}
-          onTouchStart={onHandleTouchStart}
-          onTouchEnd={onHandleTouchEnd}
-          onMouseDown={onHandleMouseDown}
           onClick={onHandleClick}
         >
           {isExpanded ? (
@@ -255,7 +255,7 @@ export function EntryModal({
 
           <button
             onClick={handleClose}
-            className="text-white/50 hover:text-white transition-colors w-10 h-10 flex items-center justify-end"
+            className="text-white/50 hover:text-white transition-colors w-12 h-12 flex items-center justify-end"
           >
             <X className="w-6 h-6" strokeWidth={1.5} />
           </button>
@@ -349,6 +349,8 @@ export function EntryModal({
             value={text}
             onChange={(e) => { setText(e.target.value); setTimeout(updateScrollIndicators, 0) }}
             onScroll={updateScrollIndicators}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             placeholder="일기 쓰고 싶은 날엔 여기에 쓸 수 있어요"
             className="w-full h-full bg-transparent text-white text-base leading-relaxed placeholder:text-white/30 resize-none outline-none px-5 min-h-[180px]"
             style={{ fontFamily: "inherit", paddingTop: 20, paddingBottom: 20 }}

@@ -39,7 +39,7 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter', 'Inter Fallback';
+  --font-sans: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   /* Regular(400) → Light(300), one step thinner */
   --font-weight-normal: 300;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
@@ -96,6 +96,9 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html {
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   body {
     @apply bg-background text-foreground;

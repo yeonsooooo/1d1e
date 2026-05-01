@@ -137,6 +137,9 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
           transition: "transform 300ms ease-out, height 300ms ease-out",
         }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={onHandleTouchStart}
+        onTouchEnd={onHandleTouchEnd}
+        onMouseDown={onHandleMouseDown}
         role="dialog"
         aria-modal="true"
         aria-label="이모지 선택"
@@ -145,9 +148,6 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
         <div
           className="flex justify-center items-center pt-3 pb-1 shrink-0"
           style={{ minHeight: 32, touchAction: "none" }}
-          onTouchStart={onHandleTouchStart}
-          onTouchEnd={onHandleTouchEnd}
-          onMouseDown={onHandleMouseDown}
           onClick={onHandleClick}
         >
           {isExpanded ? (
@@ -177,7 +177,7 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
           </span>
           <button
             onClick={handleClose}
-            className="text-white/50 hover:text-white transition-colors w-10 h-10 flex items-center justify-end"
+            className="text-white/50 hover:text-white transition-colors w-12 h-12 flex items-center justify-end"
           >
             <X className="w-6 h-6" strokeWidth={1.5} />
           </button>
@@ -206,6 +206,8 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
         <div
           ref={scrollRef}
           onScroll={handleScroll}
+          onTouchStart={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           className="flex-1 min-h-0 overflow-y-auto"
           style={{ scrollbarWidth: "none", paddingBottom: isSearching ? 16 : 80 }}
         >
