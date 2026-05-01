@@ -65,6 +65,7 @@ export function SettingsModal({ dayStartHour, onChangeDayStartHour, onClose }: S
     const dy = e.changedTouches[0].clientY - dragStartY.current
     if (!isExpanded && dy < -40) setIsExpanded(true)
     else if (isExpanded && dy > 40) setIsExpanded(false)
+    else if (!isExpanded && dy > 40) handleClose()
     dragStartY.current = null
   }
   const onHandleMouseDown = (e: React.MouseEvent) => {
