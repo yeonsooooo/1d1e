@@ -26,7 +26,8 @@
       "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 5762ec7 -- components/calendar-app.tsx)",
       "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show 5762ec7:components/calendar-app.tsx)",
       "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" show HEAD:components/settings-modal.tsx)",
-      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" diff HEAD --name-only)"
+      "Bash(git -C \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS\" diff HEAD --name-only)",
+      "Bash(curl -v \"https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?serviceKey=F46KRuOlglZPR37knvbObTv6nIQ6ZFivokIudx83EYLow84hXnxeA%2FFRRksI5N6sRorHybOSl0bleyJotzh7bQ%3D%3D&solYear=2026&numOfRows=50\")"
     ]
   }
 }

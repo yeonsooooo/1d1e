@@ -4,10 +4,10 @@ export async function getKoreanHolidays(year: number): Promise<Set<string>> {
   if (cache.has(year)) return cache.get(year)!
 
   try {
-    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`)
+    const res = await fetch(`/api/holidays/${year}`)
     if (!res.ok) throw new Error("fetch failed")
-    const data: Array<{ date: string }> = await res.json()
-    const set = new Set(data.map((h) => h.date)) // "YYYY-MM-DD"
+    const data: { dates: string[] } = await res.json()
+    const set = new Set(data.dates)
     cache.set(year, set)
     return set
   } catch {
