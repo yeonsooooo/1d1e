@@ -14,6 +14,15 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: '1d1e — One Day, One Emoji',
   description: 'A minimal dark-mode emoji diary. Capture each day with a single emoji.',
+  openGraph: {
+    title: '1d1e — One Day, One Emoji',
+    description: 'A minimal dark-mode emoji diary. Capture each day with a single emoji.',
+    images: [{ url: '/og_image.png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/og_image.png'],
+  },
   appleWebApp: {
     capable: true,
     title: '1d1e',
