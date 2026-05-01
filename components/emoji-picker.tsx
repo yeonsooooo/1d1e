@@ -193,7 +193,8 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="검색..."
-              className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 outline-none"
+              className="flex-1 bg-transparent text-white placeholder:text-white/30 outline-none"
+              style={{ fontSize: 16 }}
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} className="text-white/30 hover:text-white/60">
