@@ -249,7 +249,13 @@ export function CalendarApp() {
 
     setEmojiData(newEmojis)
     setTextData(newTexts)
-    scheduleSave(newEmojis, newTexts)
+    // 삭제는 디바운스 없이 즉시 저장
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    if (user) {
+      saveUserData(user.uid, { emojis: newEmojis, texts: newTexts }).catch(console.error)
+    } else {
+      saveToLocalStorage(newEmojis, newTexts)
+    }
     setModalState(null)
   }
 
@@ -397,14 +403,14 @@ export function CalendarApp() {
       <button
         className="fixed bottom-8 left-1/2 -translate-x-1/2 w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform z-30"
         onClick={() => {
-          const day = (viewYear === today.getFullYear() && viewMonth === today.getMonth())
-            ? today.getDate()
-            : 1
-          const hasEmoji = !!emojiData[emojiKey(viewYear, viewMonth)]?.[day]
+          const day = today.getDate()
+          const year = today.getFullYear()
+          const month = today.getMonth()
+          const hasEmoji = !!emojiData[emojiKey(year, month)]?.[day]
           if (hasEmoji) {
-            setModalState({ day, year: viewYear, month: viewMonth, isEditing: true })
+            setModalState({ day, year, month, isEditing: true })
           } else {
-            setPickerState({ day, year: viewYear, month: viewMonth })
+            setPickerState({ day, year, month })
           }
         }}
         aria-label="Add emoji"
