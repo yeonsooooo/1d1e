@@ -13,6 +13,7 @@ export async function GET(
   if (!key) return NextResponse.json({ error: "missing key" }, { status: 500 })
 
   const dates = new Set<string>()
+  const debug: string[] = []
 
   await Promise.all(
     MONTHS.map(async (month) => {
@@ -22,14 +23,17 @@ export async function GET(
       try {
         const res = await fetch(url, { next: { revalidate: 86400 } })
         const xml = await res.text()
+        if (month === "01") debug.push(`status:${res.status}`, `body:${xml.slice(0, 300)}`)
         const matches = xml.matchAll(/<locdate>(\d{8})<\/locdate>/g)
         for (const m of matches) {
           const d = m[1]
           dates.add(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`)
         }
-      } catch {}
+      } catch (e) {
+        if (month === "01") debug.push(`error:${e}`)
+      }
     })
   )
 
-  return NextResponse.json({ dates: [...dates] })
+  return NextResponse.json({ dates: [...dates], debug })
 }
