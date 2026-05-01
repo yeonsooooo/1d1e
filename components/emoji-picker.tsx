@@ -18,17 +18,23 @@ const GROUP_ICONS: LucideIcon[] = [
   Flag,            // Flags
 ]
 
+// ZWJ 시퀀스가 아닌 이모지에 emoji presentation selector(️) 보장
+function normalizeEmoji(e: string): string {
+  if (e.includes('‍') || e.includes('️')) return e
+  return e + '️'
+}
+
 // 패키지 데이터에서 카테고리 생성
 const EMOJI_CATEGORIES = Object.values(emojiByGroup).map((group, i) => ({
   label: group.name,
   icon: GROUP_ICONS[i],
-  emojis: group.emojis.map((e: { emoji: string }) => e.emoji),
+  emojis: group.emojis.map((e: { emoji: string }) => normalizeEmoji(e.emoji)),
 }))
 
 // 검색용 전체 플랫 리스트 (이모지 + 영문 이름)
 const ALL_EMOJIS_FLAT = Object.values(emojiByGroup).flatMap((group) =>
   group.emojis.map((e: { emoji: string; name: string }) => ({
-    emoji: e.emoji,
+    emoji: normalizeEmoji(e.emoji),
     name: e.name,
   }))
 )
