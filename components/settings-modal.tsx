@@ -97,6 +97,7 @@ export function SettingsModal({ dayStartHour, onChangeDayStartHour, onClose }: S
           height: isExpanded ? "calc(100dvh - 88px)" : undefined,
           transform: isVisible ? "translateY(0)" : "translateY(100%)",
           transition: "transform 300ms ease-out, height 300ms ease-out",
+          touchAction: "none",
         }}
         onTouchStart={onHandleTouchStart}
         onTouchEnd={onHandleTouchEnd}
@@ -205,6 +206,7 @@ export function SettingsModal({ dayStartHour, onChangeDayStartHour, onClose }: S
               className="mt-2 max-h-52 overflow-y-auto rounded-2xl bg-[#2a2a2a]"
               onTouchStart={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
+              style={{ touchAction: "pan-y" }}
             >
               {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
                 <button

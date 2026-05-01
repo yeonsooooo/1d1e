@@ -198,6 +198,7 @@ export function EntryModal({
           height: isExpanded ? `calc(100dvh - 88px - ${keyboardHeight}px)` : undefined,
           transform: isVisible ? "translateY(0)" : "translateY(100%)",
           transition: "transform 300ms ease-out, height 300ms ease-out",
+          touchAction: "none",
         }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onHandleTouchStart}
@@ -354,7 +355,7 @@ export function EntryModal({
             onMouseDown={(e) => e.stopPropagation()}
             placeholder="일기 쓰고 싶은 날엔 여기에 쓸 수 있어요"
             className="w-full h-full bg-transparent text-white text-base leading-relaxed placeholder:text-white/30 resize-none outline-none px-5 min-h-[180px]"
-            style={{ fontFamily: "inherit", paddingTop: 20, paddingBottom: 20 }}
+            style={{ fontFamily: "inherit", paddingTop: 20, paddingBottom: 20, touchAction: "pan-y" }}
           />
           {/* Top fade */}
           {canScrollUp && (

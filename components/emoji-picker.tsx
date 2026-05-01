@@ -136,6 +136,7 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
           height: isExpanded ? "calc(100dvh - 88px)" : 520,
           transform: isVisible ? "translateY(0)" : "translateY(100%)",
           transition: "transform 300ms ease-out, height 300ms ease-out",
+          touchAction: "none",
         }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onHandleTouchStart}
@@ -211,6 +212,7 @@ export function EmojiPicker({ date, currentEmoji, onSelect, onClear, onClose }: 
           onTouchStart={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           className="flex-1 min-h-0 overflow-y-auto"
+          style={{ touchAction: "pan-y" }}
           style={{ scrollbarWidth: "none", paddingBottom: isSearching ? 16 : 80 }}
         >
           {isSearching ? (
