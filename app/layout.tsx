@@ -8,6 +8,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#1C1C1E',
 }
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
       </head>
-      <body className="font-sans antialiased bg-black">
+      <body className="font-sans antialiased bg-[#1C1C1E]">
         <AuthProvider>
           {children}
         </AuthProvider>
