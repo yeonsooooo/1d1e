@@ -32,7 +32,11 @@
       "Bash(python3 -m json.tool)",
       "Bash(curl -s \"https://date.nager.at/api/v3/PublicHolidays/2027/KR\")",
       "Bash(python3 -c \"import json,sys; [print\\(h['date'], h['localName']\\) for h in json.load\\(sys.stdin\\)]\")",
-      "Bash(curl -s \"https://date.nager.at/api/v3/PublicHolidays/2028/KR\")"
+      "Bash(curl -s \"https://date.nager.at/api/v3/PublicHolidays/2028/KR\")",
+      "Bash(python3 -c ' *)",
+      "Bash(sips -g pixelWidth -g pixelHeight \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS/app/apple-icon.png\")",
+      "Bash(sips -z 192 192 \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS/app/apple-icon.png\" --out \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS/public/icon-192.png\")",
+      "Bash(sips -z 512 512 \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS/app/apple-icon.png\" --out \"/Users/yeonsoo/Dropbox/_디자인/3. PERSONAL/APP_1d1e/b_MPNLAPNnLeS/public/icon-512.png\")"
     ]
   }
 }
